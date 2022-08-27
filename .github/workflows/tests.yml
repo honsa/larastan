@@ -5,7 +5,7 @@ on:
     # Prevent duplicating jobs on PR-s from local branches
     branches:
       - "master"
-  pull_request:
+  pull_request: null
   schedule:
     - cron: "0 0 * * *"
 
@@ -14,24 +14,13 @@ jobs:
     strategy:
       fail-fast: true
       matrix:
-        php: ["7.2", "7.3", "7.4", "8.0"]
-        laravel: ["^6.0", "^7.0", "^8.0", "^9.0"]
-        include:
-          - php: "8.1"
-            laravel: "^8.0"
-          - php: "8.1"
-            laravel: "^9.0"
-        exclude:
-          - php: "7.2"
-            laravel: "^8.0"
-          - php: "7.2"
-            laravel: "^9.0"
-          - php: "7.3"
-            laravel: "^9.0"
-          - php: "7.4"
-            laravel: "^9.0"
+        php: ["8.0", "8.1"]
+        laravel: ["^9.0"]
+        dependencies:
+            - "lowest"
+            - "highest"
 
-    name: "P${{ matrix.php }} - L${{ matrix.laravel }}"
+    name: "P${{ matrix.php }} - L${{ matrix.laravel }} ${{ matrix.dependencies == 'highest' && '↑' || '↓' }}"
 
     runs-on: "ubuntu-latest"
 
@@ -43,7 +32,7 @@ jobs:
         uses: "shivammathur/setup-php@v2"
         with:
           php-version: "${{ matrix.php }}"
-          extensions: "dom, curl, libxml, mbstring, zip"
+          extensions: "dom, curl, libxml, mbstring, zip, fileinfo"
           tools: "composer:v2"
           coverage: "none"
 
@@ -53,19 +42,19 @@ jobs:
       - name: "Check file permissions"
         run: "test \"$(find . -type f -not -path './.git/*' -executable)\" == ./tests/laravel-test.sh"
 
-      - name: "Install dependencies"
-        run: "composer update --with='illuminate/contracts:${{ matrix.laravel }}' --prefer-dist --no-interaction --no-progress"
+      - name: "Install lowest dependencies from composer.json"
+        if: "matrix.dependencies == 'lowest'"
+        run: "composer update --with='illuminate/contracts:${{ matrix.laravel }}' --no-interaction --no-progress --prefer-lowest"
+
+      - name: "Install highest dependencies from composer.json"
+        if: "matrix.dependencies == 'highest'"
+        run: "composer update --with='illuminate/contracts:${{ matrix.laravel }}' --no-interaction --no-progress"
 
       - name: "Execute static analysis"
         run: "composer run-script test:types"
 
       - name: "Execute unit tests"
-        if: "matrix.laravel != '^9.0'"
         run: "composer run-script test:unit"
 
-      - name: "Execute unit tests (may fail)"
-        if: "matrix.laravel == '^9.0'"
-        run: "composer run-script test:unit || true"
-
-      - name: "Run Larastan on Laravel and Lumen sample applications"
+      - name: "Run Larastan on Laravel sample applications"
         run: "tests/laravel-test.sh"

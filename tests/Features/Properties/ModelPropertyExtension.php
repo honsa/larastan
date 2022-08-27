@@ -5,13 +5,18 @@ declare(strict_types=1);
 namespace Tests\Features\Properties;
 
 use App\Account;
+use App\Address;
 use App\Group;
 use App\GuardedModel;
 use App\Role;
+use App\Team;
 use App\Thread;
 use App\User;
+use ArrayObject;
 use Carbon\Carbon as BaseCarbon;
 use Illuminate\Support\Carbon;
+use Illuminate\Support\Collection;
+use function PHPStan\Testing\assertType;
 
 class ModelPropertyExtension
 {
@@ -26,6 +31,9 @@ class ModelPropertyExtension
 
     /** @var Group */
     private $group; // @phpstan-ignore-line
+
+    /** @var Team */
+    private $team; // @phpstan-ignore-line
 
     public function testPropertyReturnType(): int
     {
@@ -114,6 +122,19 @@ class ModelPropertyExtension
         return $group->save();
     }
 
+    public function testReadIdPropertyWhenMigrationsCouldntBeReadAndKeyTypeIsString(): string
+    {
+        return $this->team->id;
+    }
+
+    public function testWriteIdPropertyWhenMigrationsCouldntBeReadAndKeyTypeIsString(): bool
+    {
+        $team = new Team();
+        $team->id = 'five';
+
+        return $team->save();
+    }
+
     public function testModelWithGuardedProperties(GuardedModel $guardedModel): string
     {
         return $guardedModel->name;
@@ -126,6 +147,7 @@ class ModelPropertyExtension
 
     public function testDateCast(User $user): ?BaseCarbon
     {
+        assertType('string', $user->email);
         $user->email_verified_at = now();
 
         return $user->email_verified_at;
@@ -134,5 +156,76 @@ class ModelPropertyExtension
     public function testNullablePropertyWithCast(User $user): void
     {
         $user->email_verified_at = null;
+    }
+
+    /** @return ArrayObject<array-key, mixed> */
+    public function testAsArrayObjectCast(User $user): ArrayObject
+    {
+        return $user->options;
+    }
+
+    public function testAsArrayObjectCastCount(User $user): int
+    {
+        return count($user->options);
+    }
+
+    /** @return Collection<array-key, mixed> */
+    public function testAsCollectionCast(User $user): Collection
+    {
+        return $user->properties;
+    }
+
+    public function testAsCollectionCastCount(User $user): int
+    {
+        return count($user->properties);
+    }
+
+    /** @phpstan-return mixed */
+    public function testAsCollectionCastElements(User $user)
+    {
+        return $user->properties->first();
+    }
+
+    public function testSoftDeletesCastDateTimeAndNullable(User $user): ?string
+    {
+        return $user->deleted_at?->format('d/m/Y');
+    }
+
+    public function testWriteToSoftDeletesColumn(): void
+    {
+        $this->user->deleted_at = 'test';
+        $this->user->deleted_at = now();
+        $this->user->deleted_at = null;
+        $this->user->deleted_at = BaseCarbon::now();
+    }
+
+    public function testForeignIdFor(Address $address): int
+    {
+        return $address->user_id;
+    }
+
+    public function testForeignIdForName(Address $address): int
+    {
+        return $address->custom_foreign_id_for_name;
+    }
+
+    public function testForeignIdUUID(Address $address): string
+    {
+        return $address->address_id;
+    }
+
+    public function testForeignIdNullable(Address $address): ?string
+    {
+        return $address->nullable_address_id;
+    }
+
+    public function testForeignIdConstrained(Address $address): int
+    {
+        return $address->foreign_id_constrained;
+    }
+
+    public function testForeignIdConstrainedNullable(Address $address): ?int
+    {
+        return $address->nullable_foreign_id_constrained;
     }
 }

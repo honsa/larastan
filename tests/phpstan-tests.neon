@@ -1,7 +1,10 @@
 includes:
     - ../extension.neon
-    - ../vendor/phpstan/phpstan/conf/bleedingEdge.neon
 parameters:
+    bootstrapFiles:
+        - ../bootstrap.php
+        - bootstrap.php
+    checkGenericClassInNonGenericObjectType: true
     checkExplicitMixed: true
     ignoreErrors:
         - '#Return typehint of method Tests\\Features\\ReturnTypes\\Facades::testHttpBaseUrl\(\) has invalid type Illuminate\\Http\\Client\\PendingRequest\.#'

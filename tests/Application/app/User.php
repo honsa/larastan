@@ -6,11 +6,13 @@ use function get_class;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Casts\AsArrayObject;
 use Illuminate\Database\Eloquent\Casts\AsCollection;
+use Illuminate\Database\Eloquent\Casts\Attribute;
+use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\BelongsToMany;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\Relations\HasManyThrough;
-use Illuminate\Database\Eloquent\Relations\MorphTo;
+use Illuminate\Database\Eloquent\Relations\MorphMany;
 use Illuminate\Database\Eloquent\SoftDeletes;
 use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Notifications\Notifiable;
@@ -26,6 +28,7 @@ use Tests\Application\HasManySyncable;
  */
 class User extends Authenticatable
 {
+    use HasFactory;
     use Notifiable;
     use SoftDeletes;
 
@@ -102,9 +105,9 @@ class User extends Authenticatable
         return $this->hasManySyncable(Account::class);
     }
 
-    public function addressable(): MorphTo
+    public function address(): MorphMany
     {
-        return $this->morphTo(null, 'model_type', 'model_id');
+        return $this->morphMany(Address::class, 'addressable');
     }
 
     public function roles(): BelongsToMany
@@ -155,5 +158,35 @@ class User extends Authenticatable
     public function setActive(): void
     {
         $this->active = 1;
+    }
+
+    /**
+     * @return Attribute<int, never>
+     */
+    protected function newStyleAttribute(): Attribute
+    {
+        return Attribute::make(
+            fn ($value) => 5,
+        );
+    }
+
+    /**
+     * @return Attribute<int, string>
+     */
+    protected function stringButInt(): Attribute
+    {
+        return Attribute::make(
+            fn ($value) => 5,
+            fn (string $value) => strtolower($value)
+        );
+    }
+
+    /** This will not take any effect because it's public and does not specify generic types at return type. */
+    public function email(): Attribute
+    {
+        return Attribute::make(
+            fn ($value) => 5,
+            fn (string $value) => strtolower($value)
+        );
     }
 }

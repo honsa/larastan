@@ -9,6 +9,7 @@ use NunoMaduro\Larastan\Rules\RelationExistenceRule;
 use PHPStan\Rules\Rule;
 use PHPStan\Testing\RuleTestCase;
 
+/** @extends RuleTestCase<RelationExistenceRule> */
 class RelationExistenceRuleTest extends RuleTestCase
 {
     protected function getRule(): Rule
@@ -146,6 +147,47 @@ class RelationExistenceRuleTest extends RuleTestCase
             [
                 'Relation \'foo\' is not found in App\Transaction model.',
                 39,
+            ],
+            [
+                'Relation \'foo\' is not found in App\User model.',
+                41,
+            ],
+            [
+                'Relation \'foo\' is not found in App\User model.',
+                42,
+            ],
+            [
+                'Relation \'foo\' is not found in App\User model.',
+                43,
+            ],
+            [
+                'Relation \'foo\' is not found in App\User model.',
+                44,
+            ],
+            [
+                'Relation \'foo\' is not found in App\Account model.',
+                45,
+            ],
+            [
+                'Relation \'foo\' is not found in App\User model.',
+                46,
+            ],
+            [
+                'Relation \'foo\' is not found in App\User model.',
+                49,
+            ],
+            [
+                'Relation \'foo\' is not found in App\User model.',
+                50,
+            ],
+            [
+                'Relation \'foo\' is not found in App\User model.',
+                51,
+            ],
+
+            [
+                'Relation \'foo\' is not found in App\User model.',
+                52,
             ],
         ]);
     }

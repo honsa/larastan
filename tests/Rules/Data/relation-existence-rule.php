@@ -37,3 +37,16 @@ declare(strict_types=1);
 \App\Post::query()->orWhereHas('users.transactions.foo');
 \App\Post::query()->whereDoesntHave('users.transactions.foo');
 \App\Post::query()->orWhereDoesntHave('users.transactions.foo');
+
+\App\User::with('foo');
+\App\User::query()->with('foo');
+\App\User::with(['foo', 'accounts']);
+\App\User::query()->with(['foo', 'accounts']);
+\App\User::query()->with(['foo', 'accounts.foo']);
+\App\User::query()->with(['foo' => static function () {
+}, 'accounts']);
+
+\App\User::with('foo:id,name');
+\App\User::query()->with('foo:id,name');
+\App\User::with(['foo:id', 'accounts']);
+\App\User::query()->with(['foo:id', 'accounts']);

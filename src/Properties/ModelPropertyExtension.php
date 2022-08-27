@@ -5,15 +5,19 @@ declare(strict_types=1);
 namespace NunoMaduro\Larastan\Properties;
 
 use ArrayObject;
+use Illuminate\Database\Eloquent\Casts\Attribute;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Support\Str;
 use NunoMaduro\Larastan\Reflection\ReflectionHelper;
+use PHPStan\Broker\ClassNotFoundException;
 use PHPStan\PhpDoc\TypeStringResolver;
 use PHPStan\Reflection\ClassReflection;
+use PHPStan\Reflection\ParametersAcceptorSelector;
 use PHPStan\Reflection\PropertiesClassReflectionExtension;
 use PHPStan\Reflection\PropertyReflection;
+use PHPStan\Reflection\ReflectionProvider;
 use PHPStan\ShouldNotHappenException;
-use PHPStan\Type\IntegerType;
+use PHPStan\Type\ObjectType;
 
 /**
  * @internal
@@ -23,19 +27,11 @@ final class ModelPropertyExtension implements PropertiesClassReflectionExtension
     /** @var array<string, SchemaTable> */
     private $tables = [];
 
-    /** @var TypeStringResolver */
-    private $stringResolver;
-
     /** @var string */
     private $dateClass;
 
-    /** @var MigrationHelper */
-    private $migrationHelper;
-
-    public function __construct(TypeStringResolver $stringResolver, MigrationHelper $migrationHelper)
+    public function __construct(private TypeStringResolver $stringResolver, private MigrationHelper $migrationHelper, private SquashedMigrationHelper $squashedMigrationHelper, private ReflectionProvider $reflectionProvider)
     {
-        $this->stringResolver = $stringResolver;
-        $this->migrationHelper = $migrationHelper;
     }
 
     public function hasProperty(ClassReflection $classReflection, string $propertyName): bool
@@ -48,7 +44,7 @@ final class ModelPropertyExtension implements PropertiesClassReflectionExtension
             return false;
         }
 
-        if ($classReflection->hasNativeMethod('get'.Str::studly($propertyName).'Attribute')) {
+        if ($this->hasAttribute($classReflection, $propertyName)) {
             return false;
         }
 
@@ -57,7 +53,11 @@ final class ModelPropertyExtension implements PropertiesClassReflectionExtension
         }
 
         if (count($this->tables) === 0) {
-            $this->tables = $this->migrationHelper->initializeTables();
+            // First try to create tables from squashed migrations, if there are any
+            // Then scan the normal migration files for further changes to tables.
+            $tables = $this->squashedMigrationHelper->initializeTables();
+
+            $this->tables = $this->migrationHelper->initializeTables($tables);
         }
 
         if ($propertyName === 'id') {
@@ -67,13 +67,13 @@ final class ModelPropertyExtension implements PropertiesClassReflectionExtension
         $modelName = $classReflection->getNativeReflection()->getName();
 
         try {
-            $reflect = new \ReflectionClass($modelName);
+            $reflect = $this->reflectionProvider->getClass($modelName);
 
             /** @var Model $modelInstance */
-            $modelInstance = $reflect->newInstanceWithoutConstructor();
+            $modelInstance = $reflect->getNativeReflection()->newInstanceWithoutConstructor();
 
             $tableName = $modelInstance->getTable();
-        } catch (\ReflectionException $e) {
+        } catch (ClassNotFoundException|\ReflectionException $e) {
             return false;
         }
 
@@ -106,28 +106,29 @@ final class ModelPropertyExtension implements PropertiesClassReflectionExtension
         $modelName = $classReflection->getNativeReflection()->getName();
 
         try {
-            $reflect = new \ReflectionClass($modelName);
+            $reflect = $this->reflectionProvider->getClass($modelName);
 
             /** @var Model $modelInstance */
-            $modelInstance = $reflect->newInstanceWithoutConstructor();
+            $modelInstance = $reflect->getNativeReflection()->newInstanceWithoutConstructor();
 
             $tableName = $modelInstance->getTable();
-        } catch (\ReflectionException $e) {
+        } catch (ClassNotFoundException|\ReflectionException $e) {
             // `hasProperty` should return false if there was a reflection exception.
             // so this should never happen
             throw new ShouldNotHappenException();
         }
 
         if (
-            (! array_key_exists($tableName, $this->tables)
+            (
+                ! array_key_exists($tableName, $this->tables)
                 || ! array_key_exists($propertyName, $this->tables[$tableName]->columns)
             )
             && $propertyName === 'id'
         ) {
             return new ModelProperty(
                 $classReflection,
-                new IntegerType(),
-                new IntegerType()
+                $this->stringResolver->resolve($modelInstance->getKeyType()),
+                $this->stringResolver->resolve($modelInstance->getKeyType())
             );
         }
 
@@ -147,10 +148,28 @@ final class ModelPropertyExtension implements PropertiesClassReflectionExtension
                 ? '\\'.get_class(\Illuminate\Support\Facades\Date::now())
                 : '\Illuminate\Support\Carbon';
 
-            $this->dateClass .= '|\Carbon\Carbon';
+            if ($this->dateClass === '\Illuminate\Support\Carbon') {
+                $this->dateClass .= '|\Carbon\Carbon';
+            }
         }
 
         return $this->dateClass;
+    }
+
+    /**
+     * @param  Model  $modelInstance
+     * @return string[]
+     * @phpstan-return array<int, string>
+     */
+    private function getModelDateColumns(Model $modelInstance): array
+    {
+        $dateColumns = $modelInstance->getDates();
+
+        if (method_exists($modelInstance, 'getDeletedAtColumn')) {
+            $dateColumns[] = $modelInstance->getDeletedAtColumn();
+        }
+
+        return $dateColumns;
     }
 
     /**
@@ -164,7 +183,7 @@ final class ModelPropertyExtension implements PropertiesClassReflectionExtension
         $readableType = $column->readableType;
         $writableType = $column->writeableType;
 
-        if (in_array($column->name, $modelInstance->getDates(), true)) {
+        if (in_array($column->name, $this->getModelDateColumns($modelInstance), true)) {
             return [$this->getDateClass().($column->nullable ? '|null' : ''), $this->getDateClass().'|string'.($column->nullable ? '|null' : '')];
         }
 
@@ -189,6 +208,7 @@ final class ModelPropertyExtension implements PropertiesClassReflectionExtension
                 }
                 break;
             case 'enum':
+            case 'set':
                 if (! $column->options) {
                     $readableType = $writableType = 'string';
                 } else {
@@ -248,7 +268,7 @@ final class ModelPropertyExtension implements PropertiesClassReflectionExtension
                     $realType = ArrayObject::class;
                     break;
                 case 'Illuminate\Database\Eloquent\Casts\AsCollection':
-                    $realType = '\Illuminate\Support\Collection<mixed, mixed>';
+                    $realType = '\Illuminate\Support\Collection<array-key, mixed>';
                     break;
                 default:
                     $realType = class_exists($type) ? ('\\'.$type) : 'mixed';
@@ -262,5 +282,32 @@ final class ModelPropertyExtension implements PropertiesClassReflectionExtension
             $this->tables[$modelInstance->getTable()]->columns[$name]->readableType = $realType;
             $this->tables[$modelInstance->getTable()]->columns[$name]->writeableType = $realType;
         }
+    }
+
+    private function hasAttribute(ClassReflection $classReflection, string $propertyName): bool
+    {
+        if ($classReflection->hasNativeMethod('get'.Str::studly($propertyName).'Attribute')) {
+            return true;
+        }
+
+        $camelCase = Str::camel($propertyName);
+
+        if ($classReflection->hasNativeMethod($camelCase)) {
+            $methodReflection = $classReflection->getNativeMethod($camelCase);
+
+            if ($methodReflection->isPublic() || $methodReflection->isPrivate()) {
+                return false;
+            }
+
+            $returnType = ParametersAcceptorSelector::selectSingle($methodReflection->getVariants())->getReturnType();
+
+            if (! (new ObjectType(Attribute::class))->isSuperTypeOf($returnType)->yes()) {
+                return false;
+            }
+
+            return true;
+        }
+
+        return false;
     }
 }

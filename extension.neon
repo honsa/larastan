@@ -1,36 +1,4 @@
 parameters:
-    stubFiles:
-        - stubs/Enumerable.stub
-        - stubs/EloquentBuilder.stub
-        - stubs/Collection.stub
-        - stubs/EloquentCollection.stub
-        - stubs/Factory.stub
-        - stubs/Model.stub
-        - stubs/Gate.stub
-        - stubs/Relation.stub
-        - stubs/BelongsTo.stub
-        - stubs/BelongsToMany.stub
-        - stubs/HasOneOrMany.stub
-        - stubs/HasMany.stub
-        - stubs/HasOne.stub
-        - stubs/HasOneThrough.stub
-        - stubs/HasManyThrough.stub
-        - stubs/Mailable.stub
-        - stubs/MorphOne.stub
-        - stubs/MorphOneOrMany.stub
-        - stubs/MorphTo.stub
-        - stubs/MorphToMany.stub
-        - stubs/MorphMany.stub
-        - stubs/Helpers.stub
-        - stubs/HigherOrderProxies.stub
-        - stubs/QueryBuilder.stub
-        - stubs/Facades.stub
-        - stubs/Pagination.stub
-        - stubs/Contracts/Pagination.stub
-        - stubs/Contracts/Support.stub
-        - stubs/Redis/Connection.stub
-        - stubs/Logger.stub
-        - stubs/EnumeratesValues.stub
     universalObjectCratesClasses:
         - Illuminate\Http\Request
     earlyTerminatingFunctionCalls:
@@ -42,12 +10,12 @@ parameters:
         - Eloquent
     bootstrapFiles:
         - bootstrap.php
-    checkGenericClassInNonGenericObjectType: false
     checkOctaneCompatibility: false
     noModelMake: true
     noUnnecessaryCollectionCall: true
     noUnnecessaryCollectionCallOnly: []
     noUnnecessaryCollectionCallExcept: []
+    squashedMigrationsPath: []
     databaseMigrationsPath: []
     checkModelProperties: false
     checkPhpDocMissingReturn: false
@@ -59,6 +27,7 @@ parametersSchema:
     noUnnecessaryCollectionCallOnly: listOf(string())
     noUnnecessaryCollectionCallExcept: listOf(string())
     databaseMigrationsPath: listOf(string())
+    squashedMigrationsPath: listOf(string())
     checkModelProperties: bool()
 
 conditionalTags:
@@ -114,6 +83,10 @@ services:
             - phpstan.broker.methodsClassReflectionExtension
     -
         class: NunoMaduro\Larastan\Methods\RedirectResponseMethodsClassReflectionExtension
+        tags:
+            - phpstan.broker.methodsClassReflectionExtension
+    -
+        class: NunoMaduro\Larastan\Methods\MacroMethodsClassReflectionExtension
         tags:
             - phpstan.broker.methodsClassReflectionExtension
 
@@ -182,7 +155,12 @@ services:
             - phpstan.broker.dynamicStaticMethodReturnTypeExtension
 
     -
-        class: NunoMaduro\Larastan\ReturnTypes\ModelExtension
+        class: NunoMaduro\Larastan\ReturnTypes\ModelDynamicStaticMethodReturnTypeExtension
+        tags:
+            - phpstan.broker.dynamicStaticMethodReturnTypeExtension
+
+    -
+        class: NunoMaduro\Larastan\ReturnTypes\AppMakeDynamicReturnTypeExtension
         tags:
             - phpstan.broker.dynamicStaticMethodReturnTypeExtension
 
@@ -202,12 +180,27 @@ services:
             - phpstan.broker.dynamicMethodReturnTypeExtension
 
     -
+        class: NunoMaduro\Larastan\ReturnTypes\DateExtension
+        tags:
+            - phpstan.broker.dynamicStaticMethodReturnTypeExtension
+
+    -
         class: NunoMaduro\Larastan\ReturnTypes\GuardExtension
         tags:
             - phpstan.broker.dynamicMethodReturnTypeExtension
 
     -
-        class: NunoMaduro\Larastan\ReturnTypes\RequestExtension
+        class: NunoMaduro\Larastan\ReturnTypes\RequestFileExtension
+        tags:
+            - phpstan.broker.dynamicMethodReturnTypeExtension
+
+    -
+        class: NunoMaduro\Larastan\ReturnTypes\RequestRouteExtension
+        tags:
+            - phpstan.broker.dynamicMethodReturnTypeExtension
+
+    -
+        class: NunoMaduro\Larastan\ReturnTypes\RequestUserExtension
         tags:
             - phpstan.broker.dynamicMethodReturnTypeExtension
 
@@ -242,11 +235,6 @@ services:
             - phpstan.broker.dynamicMethodReturnTypeExtension
 
     -
-        class: NunoMaduro\Larastan\ReturnTypes\CollectionMakeDynamicStaticMethodReturnTypeExtension
-        tags:
-            - phpstan.broker.dynamicStaticMethodReturnTypeExtension
-
-    -
         class: NunoMaduro\Larastan\Support\CollectionHelper
 
     -
@@ -260,7 +248,7 @@ services:
             - phpstan.broker.dynamicFunctionReturnTypeExtension
 
     -
-        class: NunoMaduro\Larastan\ReturnTypes\Helpers\CookieExtension
+        class: NunoMaduro\Larastan\ReturnTypes\Helpers\NowAndTodayExtension
         tags:
             - phpstan.broker.dynamicFunctionReturnTypeExtension
 
@@ -270,27 +258,7 @@ services:
             - phpstan.broker.dynamicFunctionReturnTypeExtension
 
     -
-        class: NunoMaduro\Larastan\ReturnTypes\Helpers\RequestExtension
-        tags:
-            - phpstan.broker.dynamicFunctionReturnTypeExtension
-
-    -
-        class: NunoMaduro\Larastan\ReturnTypes\Helpers\RedirectExtension
-        tags:
-            - phpstan.broker.dynamicFunctionReturnTypeExtension
-
-    -
-        class: NunoMaduro\Larastan\ReturnTypes\Helpers\UrlExtension
-        tags:
-            - phpstan.broker.dynamicFunctionReturnTypeExtension
-
-    -
         class: NunoMaduro\Larastan\ReturnTypes\Helpers\ViewExtension
-        tags:
-            - phpstan.broker.dynamicFunctionReturnTypeExtension
-
-    -
-        class: NunoMaduro\Larastan\ReturnTypes\Helpers\TransExtension
         tags:
             - phpstan.broker.dynamicFunctionReturnTypeExtension
 
@@ -303,6 +271,26 @@ services:
         class: NunoMaduro\Larastan\ReturnTypes\CollectionFilterDynamicReturnTypeExtension
         tags:
             - phpstan.broker.dynamicMethodReturnTypeExtension
+
+    -
+        class: NunoMaduro\Larastan\ReturnTypes\CollectionGenericStaticMethodDynamicMethodReturnTypeExtension
+        tags:
+            - phpstan.broker.dynamicMethodReturnTypeExtension
+
+    -
+        class: NunoMaduro\Larastan\ReturnTypes\NewModelQueryDynamicMethodReturnTypeExtension
+        tags:
+            - phpstan.broker.dynamicMethodReturnTypeExtension
+
+    -
+        class: NunoMaduro\Larastan\ReturnTypes\FactoryDynamicMethodReturnTypeExtension
+        tags:
+            - phpstan.broker.dynamicMethodReturnTypeExtension
+
+    -
+        class: NunoMaduro\Larastan\ReturnTypes\CollectionGenericStaticMethodDynamicStaticMethodReturnTypeExtension
+        tags:
+            - phpstan.broker.dynamicStaticMethodReturnTypeExtension
 
     -
         class: NunoMaduro\Larastan\Types\AbortIfFunctionTypeSpecifyingExtension
@@ -388,6 +376,10 @@ services:
         class: NunoMaduro\Larastan\Types\GenericEloquentBuilderTypeNodeResolverExtension
         tags:
             - phpstan.phpDoc.typeNodeResolverExtension
+    -
+        class: NunoMaduro\Larastan\ReturnTypes\AppEnvironmentReturnTypeExtension
+        tags:
+            - phpstan.broker.dynamicMethodReturnTypeExtension
 
     -
         class: NunoMaduro\Larastan\Types\ModelProperty\ModelPropertyTypeNodeResolverExtension
@@ -406,6 +398,11 @@ services:
         arguments:
             databaseMigrationPath: %databaseMigrationsPath%
             parser: @currentPhpVersionSimpleDirectParser
+
+    -
+        class: NunoMaduro\Larastan\Properties\SquashedMigrationHelper
+        arguments:
+            schemaPaths: %squashedMigrationsPath%
 
     -
         class: NunoMaduro\Larastan\Rules\ModelProperties\ModelPropertiesRuleHelper
@@ -435,5 +432,14 @@ services:
             dispatchableClass: Illuminate\Foundation\Events\Dispatchable
         tags:
             - phpstan.rules.rule
+    - NunoMaduro\Larastan\Properties\Schema\PhpMyAdminDataTypeToPhpTypeConverter
+
+    -
+        class: NunoMaduro\Larastan\LarastanStubFilesExtension
+        tags: [phpstan.stubFilesExtension]
 rules:
+    - NunoMaduro\Larastan\Rules\DeferrableServiceProviderMissingProvidesRule
     - NunoMaduro\Larastan\Rules\RelationExistenceRule
+    - NunoMaduro\Larastan\Rules\UselessConstructs\NoUselessWithFunctionCallsRule
+    - NunoMaduro\Larastan\Rules\UselessConstructs\NoUselessValueFunctionCallsRule
+    - NunoMaduro\Larastan\Rules\DeferrableServiceProviderMissingProvidesRule

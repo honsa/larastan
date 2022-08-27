@@ -5,10 +5,10 @@ namespace Reflection;
 use Generator;
 use Illuminate\Http\Request;
 use Illuminate\Validation\ValidationException;
-use NunoMaduro\Larastan\Methods\Extension;
-use PHPStan\Reflection\Php\PhpMethodReflectionFactory;
+use NunoMaduro\Larastan\Methods\MacroMethodsClassReflectionExtension;
 use PHPStan\Reflection\ReflectionProvider;
 use PHPStan\Testing\PHPStanTestCase;
+use PHPStan\Type\ClosureTypeFactory;
 use PHPStan\Type\ObjectType;
 
 class MacroMethodsClassReflectionExtensionTest extends PHPStanTestCase
@@ -19,23 +19,16 @@ class MacroMethodsClassReflectionExtensionTest extends PHPStanTestCase
     private $reflectionProvider;
 
     /**
-     * @var Extension
+     * @var MacroMethodsClassReflectionExtension
      */
     private $reflectionExtension;
-
-    /** @var string */
-    private $laravelVersion;
 
     protected function setUp(): void
     {
         parent::setUp();
 
         $this->reflectionProvider = $this->createReflectionProvider();
-        $this->reflectionExtension = new Extension(
-            self::getContainer()->getByType(PhpMethodReflectionFactory::class),
-            $this->reflectionProvider
-        );
-        $this->laravelVersion = LARAVEL_VERSION;
+        $this->reflectionExtension = new MacroMethodsClassReflectionExtension($this->reflectionProvider, self::getContainer()->getByType(ClosureTypeFactory::class));
     }
 
     /**
@@ -43,12 +36,8 @@ class MacroMethodsClassReflectionExtensionTest extends PHPStanTestCase
      *
      * @dataProvider methodAndClassProvider
      */
-    public function it_can_find_macros_on_a_class(string $class, string $methodName, string $laravelVersion)
+    public function it_can_find_macros_on_a_class(string $class, string $methodName)
     {
-        if ($laravelVersion !== '' && version_compare($this->laravelVersion, $laravelVersion, '<')) {
-            $this->markTestSkipped('This test requires Laravel 8.0 or higher.');
-        }
-
         $requestClass = $this->reflectionProvider->getClass($class);
 
         $this->assertTrue($this->reflectionExtension->hasMethod($requestClass, $methodName));
@@ -74,10 +63,10 @@ class MacroMethodsClassReflectionExtensionTest extends PHPStanTestCase
 
     public function methodAndClassProvider(): Generator
     {
-        yield [Request::class, 'validate', ''];
-        yield [Request::class, 'validateWithBag', ''];
-        yield [Request::class, 'hasValidSignature', ''];
-        yield [Request::class, 'hasValidRelativeSignature', '8.0'];
+        yield [Request::class, 'validate'];
+        yield [Request::class, 'validateWithBag'];
+        yield [Request::class, 'hasValidSignature'];
+        yield [Request::class, 'hasValidRelativeSignature'];
     }
 
     public function methodAndThrowTypeProvider(): Generator

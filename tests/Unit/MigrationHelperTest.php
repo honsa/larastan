@@ -106,6 +106,56 @@ class MigrationHelperTest extends PHPStanTestCase
         self::assertSame('string', $tables['users']->columns['updated_at']->readableType);
     }
 
+    /** @test */
+    public function it_can_handle_alter_table_rename()
+    {
+        $migrationHelper = new MigrationHelper($this->parser, [
+            __DIR__.'/data/rename_migrations',
+        ], $this->fileHelper);
+
+        $tables = $migrationHelper->initializeTables();
+
+        self::assertCount(1, $tables);
+        self::assertArrayNotHasKey('users', $tables);
+        self::assertArrayHasKey('accounts', $tables);
+    }
+
+    /** @test */
+    public function it_can_handle_migrations_with_soft_deletes()
+    {
+        $migrationHelper = new MigrationHelper($this->parser, [__DIR__.'/data/migrations_using_soft_deletes'], $this->fileHelper);
+
+        $tables = $migrationHelper->initializeTables();
+
+        self::assertCount(1, $tables);
+        self::assertArrayHasKey('users', $tables);
+        self::assertCount(6, $tables['users']->columns);
+        self::assertSame('string', $tables['users']->columns['deleted_at']->readableType);
+    }
+
+    /** @test */
+    public function it_can_handle_migrations_with_soft_deletes_tz()
+    {
+        $migrationHelper = new MigrationHelper($this->parser, [__DIR__.'/data/migrations_using_soft_deletes_tz'], $this->fileHelper);
+
+        $tables = $migrationHelper->initializeTables();
+
+        self::assertCount(1, $tables);
+        self::assertArrayHasKey('users', $tables);
+        self::assertCount(6, $tables['users']->columns);
+        self::assertSame('string', $tables['users']->columns['deleted_at']->readableType);
+    }
+
+    /** @test */
+    public function it_can_handle_connection_before_schema_create()
+    {
+        $migrationHelper = new MigrationHelper($this->parser, [__DIR__.'/data/migration_with_schema_connection'], $this->fileHelper);
+
+        $tables = $migrationHelper->initializeTables();
+
+        $this->assertUsersTableSchema($tables);
+    }
+
     /**
      * @param  array<string, SchemaTable>  $tables
      */

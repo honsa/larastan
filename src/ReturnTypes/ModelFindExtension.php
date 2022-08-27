@@ -11,6 +11,7 @@ use Illuminate\Database\Query\Builder as QueryBuilder;
 use Illuminate\Support\Str;
 use NunoMaduro\Larastan\Methods\BuilderHelper;
 use PhpParser\Node\Expr\StaticCall;
+use PhpParser\Node\Name;
 use PHPStan\Analyser\Scope;
 use PHPStan\Reflection\MethodReflection;
 use PHPStan\Reflection\ReflectionProvider;
@@ -18,6 +19,7 @@ use PHPStan\Type\ArrayType;
 use PHPStan\Type\DynamicStaticMethodReturnTypeExtension;
 use PHPStan\Type\ErrorType;
 use PHPStan\Type\Generic\GenericObjectType;
+use PHPStan\Type\IntegerType;
 use PHPStan\Type\MixedType;
 use PHPStan\Type\ObjectType;
 use PHPStan\Type\Type;
@@ -79,7 +81,13 @@ final class ModelFindExtension implements DynamicStaticMethodReturnTypeExtension
             return new ErrorType();
         }
 
-        $modelName = $methodReflection->getDeclaringClass()->getName();
+        $class = $methodCall->class;
+
+        if (! $class instanceof Name) {
+            return new ErrorType();
+        }
+
+        $modelName = $class->toString();
         $returnType = $methodReflection->getVariants()[0]->getReturnType();
         $argType = $scope->getType($methodCall->getArgs()[0]->value);
 
@@ -87,7 +95,7 @@ final class ModelFindExtension implements DynamicStaticMethodReturnTypeExtension
             if (in_array(Collection::class, $returnType->getReferencedClasses(), true)) {
                 $collectionClassName = $this->builderHelper->determineCollectionClassName($modelName);
 
-                return new GenericObjectType($collectionClassName, [new ObjectType($modelName)]);
+                return new GenericObjectType($collectionClassName, [new IntegerType(), new ObjectType($modelName)]);
             }
 
             return TypeCombinator::remove($returnType, new ObjectType($modelName));

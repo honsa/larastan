@@ -6,6 +6,124 @@ and this project adheres to [Semantic Versioning](http://semver.org/).
 
 ## [Unreleased]
 
+### Improvements
+* feat: add Rule checking for useless 'with()' and 'value()' function calls by @PrinsFrank in https://github.com/nunomaduro/larastan/pull/1226
+* feat: Add rule for missing 'provides' method in Deferrable ServiceProviders
+* feat: Support for `__()` helper and simplified existing `trans()` helper by @niekbr in [#1296](https://github.com/nunomaduro/larastan/pull/1296).
+
+### Fixed
+* fix: Resolve correct model factory instance when application namespace is empty
+* fix: Remove stubs for `having()` and `orHaving()` QueryBuilder methods by @Maxoulak in [#1258](https://github.com/nunomaduro/larastan/pull/1258)
+* fix: fix return types for App::environment() [#1303](https://github.com/nunomaduro/larastan/pull/1303)
+* fix: Remove all unnecessary method stubs for the Query Builder by @lupinitylabs in [#1343](https://github.com/nunomaduro/larastan/pull/1343)
+
+## [2.1.8] - 2022-06-04
+
+### Fixed
+* Don't use `ReflectionClass` directly https://github.com/nunomaduro/larastan/commit/2404fa8d9e27d726bb9e42ec754b323d6727bdfd
+* Don't try to invoke methods on classes https://github.com/nunomaduro/larastan/commit/2a0b2dade387bc19bdf070650c1ba1e035c709da
+
+## [2.1.7] - 2022-06-03
+
+### Added
+* Conditional return types to some global helper functions by @canvural in https://github.com/nunomaduro/larastan/pull/1260
+* Conditional return types for `Conditionable` trait by @canvural in https://github.com/nunomaduro/larastan/pull/1261
+* Conditional return type for `Route::middleware` by @canvural in https://github.com/nunomaduro/larastan/commit/0543c454896f07079d86145afbc318a947ee72c1
+
+## [2.1.6] - 2022-05-23
+
+### Changed
+
+* Increased minimum PHPStan version to 1.7.0
+
+## [2.1.5] - 2022-05-23
+
+### Added
+
+* feat: add dynamic return type extension for `App::make` by @PrinsFrank in https://github.com/nunomaduro/larastan/pull/1222
+* Improve DX: specify memory limits for tests (custom composer scripts) by @lptn in https://github.com/nunomaduro/larastan/pull/1220
+* Allow Builder-s in Builder::union* $query parameter by @fagai in https://github.com/nunomaduro/larastan/pull/1231
+* Added conditional return types by @ricklambrechts in https://github.com/nunomaduro/larastan/pull/1236
+* Add support for Storage::drive besides Storage::disk by @PrinsFrank in https://github.com/nunomaduro/larastan/pull/1241
+* Date type extension by @bastien-phi in https://github.com/nunomaduro/larastan/pull/1142
+
+### Fixed
+* fix: typo in doc file name by @mnastalski in https://github.com/nunomaduro/larastan/pull/1208
+* fix: fix: change `QueryBuilder::newQuery()` @return from `$this` to `static` by @dotdash in https://github.com/nunomaduro/larastan/pull/1221
+* Update joinSub docblock by @harmenjanssen in https://github.com/nunomaduro/larastan/pull/1212
+* When unless void default by @BertvanHoekelen in https://github.com/nunomaduro/larastan/pull/1203
+* Fix Model property types by @szepeviktor in https://github.com/nunomaduro/larastan/pull/1234
+
+## [2.1.4] - 2022-03-30
+
+### Improvements
+* feat: add cursorPaginate() support by @BramVanBerkel in https://github.com/nunomaduro/larastan/pull/1198
+* feat: add App::make() support by @PrinsFrank in https://github.com/nunomaduro/larastan/pull/1222
+
+### Fixes
+* fix: inverted check in the ModelRuleHelper by @mad-briller in https://github.com/nunomaduro/larastan/pull/1207
+
+## [2.1.3] - 2022-03-23
+
+### Improvements
+* feat: add exact typehints for `Model` `casts`, `hidden` and `visible` properties by @Magiczne in https://github.com/nunomaduro/larastan/pull/1158
+* feat: support `with` in RelationExistenceRule  by @canvural in https://github.com/nunomaduro/larastan/pull/1175
+* feat: update Eloquent Builder stubs to be more specific by @canvural in https://github.com/nunomaduro/larastan/pull/1178
+* Break long line in transformStaticParameters by @szepeviktor in https://github.com/nunomaduro/larastan/pull/1183
+* feat: improve model factory `after*` methods by @mdpoulter in https://github.com/nunomaduro/larastan/pull/1195
+
+### Fixes
+* fix: use custom collection if it does not have template types by @canvural in https://github.com/nunomaduro/larastan/pull/1170
+* fix: ignore Model in ModelPropertyRule by @canvural in https://github.com/nunomaduro/larastan/pull/1184
+* fix: use TypeTraverser to handle Union and Intersection types in `ModelRelationsExtension` by @canvural in https://github.com/nunomaduro/larastan/pull/1187
+
+
+* fix: updated `composer/pcre` to new PHP relevant version
+* feat: add support for the `foreignId` column in migrations
+
+## [2.1.0] - 2022-03-04
+
+### Added
+
+* feat: add return type support for `$request->user()` call by @canvural in https://github.com/nunomaduro/larastan/pull/1136
+* feat: schema dump parsing by @canvural in https://github.com/nunomaduro/larastan/pull/1147
+* feat: add support for migrations using `Schema::connection` by @canvural in https://github.com/nunomaduro/larastan/pull/1151
+
+### Fixed
+* fix: collect() returns collection which can have array-key as key type in https://github.com/nunomaduro/larastan/commit/b0a50dfe2d21c44c9f2577aa5d7c9825b6b9d5b2
+* fix: `Query::whereBetween` typehint by @gitetsu in https://github.com/nunomaduro/larastan/pull/1123
+* fix: update PHPStan version and stubs by @canvural in https://github.com/nunomaduro/larastan/pull/1144
+* fix: `deleted_at` column has date type rather than `string` by @totov in https://github.com/nunomaduro/larastan/pull/1124
+
+
+## [2.0.1] - 2022-02-09
+
+### Added
+
+* Fix incorrect return type by `route` on Request class by @fragkp in https://github.com/nunomaduro/larastan/pull/1113
+
+### Changed
+
+* refactor: replace composer with copy of ClassMapGenerator by @canvural in https://github.com/nunomaduro/larastan/pull/1119
+
+## [2.0.0] - 2022-01-26
+
+### Changed
+
+- Dropped support for Laravel versions older than 9.
+- Moved all Collection stubs to Laravel core.
+### Added
+* Infer type of model `id` without migrations by @sebdesign in https://github.com/nunomaduro/larastan/pull/1057
+* Enable Testbench package discovery by @mewejo in https://github.com/nunomaduro/larastan/pull/1093
+
+## [1.0.3] - 2022-01-20
+
+* Avoid #1059 by @szepeviktor in https://github.com/nunomaduro/larastan/pull/1062
+* Fix SchemaAggregation when renaming tables through non-static method call by @N-Silbernagel in https://github.com/nunomaduro/larastan/pull/1065
+* fix: Call to an undefined method Eloquent\Builder::restore by @ryo-imai-bit in https://github.com/nunomaduro/larastan/pull/1061
+* fix: check for trait with getDeclaringTrait if method is declared in a trait
+* fix: use container to get the FunctionCallParametersCheck class in test
+
 ## [1.0.2] - 2021-11-23
 
 ### Added
@@ -75,7 +193,7 @@ and this project adheres to [Semantic Versioning](http://semver.org/).
 
 - Support global macros on the eloquent query builder.
 - Partial support for defining columns with `foreignIdFor` in migrations. ([#932](https://github.com/nunomaduro/larastan/pull/932)) Thanks @Josh-G
-- Extension for `collect` helper and `Collection::make` ([#904](https://github.com/nunomaduro/larastan/pull/904)) 
+- Extension for `collect` helper and `Collection::make` ([#904](https://github.com/nunomaduro/larastan/pull/904))
 - Support for scopes defined in model docblocks ([88422fb](https://github.com/nunomaduro/larastan/commit/88422fb90e85385245fb1badcaf5fbd8e0a1530d))
 - `rescue` helper stub ([#961](https://github.com/nunomaduro/larastan/pull/961)) Thanks @jrmajor
 - Added `trait_exists` to ensure `orchestra/testbench` is installed for packages. ([#957](https://github.com/nunomaduro/larastan/pull/957)) Thanks @rajyan
@@ -707,7 +825,17 @@ Upgrade guide: [UPGRADE.md](https://github.com/nunomaduro/larastan/blob/master/U
 ### Added
 - Adds first alpha version
 
-[Unreleased]: https://github.com/nunomaduro/larastan/compare/1.0.2...HEAD
+[Unreleased]: https://github.com/nunomaduro/larastan/compare/v2.1.8...HEAD
+[2.1.8]: https://github.com/nunomaduro/larastan/compare/v2.1.7...v2.1.8
+[2.1.7]: https://github.com/nunomaduro/larastan/compare/v2.1.6...v2.1.7
+[2.1.6]: https://github.com/nunomaduro/larastan/compare/v2.1.5...v2.1.6
+[2.1.5]: https://github.com/nunomaduro/larastan/compare/v2.1.4...v2.1.5
+[2.1.4]: https://github.com/nunomaduro/larastan/compare/v2.1.3...v2.1.4
+[2.1.3]: https://github.com/nunomaduro/larastan/compare/v2.1.2...v2.1.3
+[2.1.0]: https://github.com/nunomaduro/larastan/compare/2.0.1...2.1.0
+[2.0.1]: https://github.com/nunomaduro/larastan/compare/2.0.0...2.0.1
+[2.0.0]: https://github.com/nunomaduro/larastan/compare/1.0.3...2.0.0
+[1.0.3]: https://github.com/nunomaduro/larastan/compare/1.0.2...1.0.3
 [1.0.2]: https://github.com/nunomaduro/larastan/compare/1.0.1...1.0.2
 [1.0.1]: https://github.com/nunomaduro/larastan/compare/1.0.0...1.0.1
 [1.0.0]: https://github.com/nunomaduro/larastan/compare/v0.7.15...1.0.0

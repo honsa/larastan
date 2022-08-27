@@ -6,6 +6,7 @@ namespace NunoMaduro\Larastan\Properties;
 
 use PHPStan\File\FileHelper;
 use PHPStan\Parser\Parser;
+use PHPStan\Parser\ParserErrorsException;
 use RecursiveDirectoryIterator;
 use RecursiveIteratorIterator;
 use RegexIterator;
@@ -33,27 +34,30 @@ class MigrationHelper
     }
 
     /**
+     * @param  array<string, SchemaTable>  $tables
      * @return array<string, SchemaTable>
      */
-    public function initializeTables(): array
+    public function initializeTables(array $tables = []): array
     {
-        if (empty($this->databaseMigrationPath)) {
+        if (count($this->databaseMigrationPath) === 0) {
             $this->databaseMigrationPath = [database_path('migrations')];
         }
 
-        $schemaAggregator = new SchemaAggregator();
+        $schemaAggregator = new SchemaAggregator($tables);
         $filesArray = $this->getMigrationFiles();
 
         if (empty($filesArray)) {
-            return [];
+            return $tables;
         }
 
         ksort($filesArray);
 
-        $this->requireFiles($filesArray);
-
         foreach ($filesArray as $file) {
-            $schemaAggregator->addStatements($this->parser->parseFile($file->getPathname()));
+            try {
+                $schemaAggregator->addStatements($this->parser->parseFile($file->getPathname()));
+            } catch (ParserErrorsException $e) {
+                continue;
+            }
         }
 
         return $schemaAggregator->tables;
@@ -81,15 +85,5 @@ class MigrationHelper
         }
 
         return $migrationFiles;
-    }
-
-    /**
-     * @param  SplFileInfo[]  $files
-     */
-    private function requireFiles(array $files): void
-    {
-        foreach ($files as $file) {
-            require_once $file;
-        }
     }
 }

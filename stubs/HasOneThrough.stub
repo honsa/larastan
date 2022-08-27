@@ -18,7 +18,7 @@ class HasOneThrough extends HasManyThrough
     /**
      * Get the results of the relationship.
      *
-     * @phpstan-return \Illuminate\Database\Eloquent\Collection<TRelatedModel>
+     * @phpstan-return \Traversable<int, TRelatedModel>
      */
     public function getResults();
 }

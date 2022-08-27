@@ -4,7 +4,7 @@ namespace Illuminate\Database\Eloquent;
 
 /**
  * @template TModelClass of Model
- * @property-read static<TModelClass> $orWhere
+ * @property-read static $orWhere
  */
 class Builder
 {
@@ -21,7 +21,7 @@ class Builder
      *
      * @param  string  $identifier
      * @param  \Illuminate\Database\Eloquent\Scope|\Closure  $scope
-     * @return static<TModelClass>
+     * @return static
      */
     public function withGlobalScope($identifier, $scope);
 
@@ -29,7 +29,7 @@ class Builder
      * Remove a registered global scope.
      *
      * @param  \Illuminate\Database\Eloquent\Scope|string  $scope
-     * @return static<TModelClass>
+     * @return static
      */
     public function withoutGlobalScope($scope);
 
@@ -46,7 +46,7 @@ class Builder
      * Create a collection of models from plain arrays.
      *
      * @param  array<mixed>  $items
-     * @phpstan-return \Illuminate\Database\Eloquent\Collection<TModelClass>
+     * @phpstan-return \Illuminate\Database\Eloquent\Collection<int, TModelClass>
      */
     public function hydrate(array $items);
 
@@ -55,7 +55,7 @@ class Builder
      *
      * @param  string  $query
      * @param  array<mixed>  $bindings
-     * @phpstan-return \Illuminate\Database\Eloquent\Collection<TModelClass>
+     * @phpstan-return \Illuminate\Database\Eloquent\Collection<int, TModelClass>
      */
     public function fromQuery($query, $bindings = []);
 
@@ -64,16 +64,16 @@ class Builder
      *
      * @param  mixed  $id
      * @param  array<int, (model-property<TModelClass>|'*')>|model-property<TModelClass>|'*'  $columns
-     * @phpstan-return TModelClass|\Illuminate\Database\Eloquent\Collection<TModelClass>|null
+     * @phpstan-return ($id is (\Illuminate\Contracts\Support\Arrayable<array-key, mixed>|array<mixed>) ? \Illuminate\Database\Eloquent\Collection<int, TModelClass> : TModelClass)|null
      */
     public function find($id, $columns = ['*']);
 
     /**
      * Find multiple models by their primary keys.
      *
-     * @param  \Illuminate\Contracts\Support\Arrayable|array<mixed>  $ids
+     * @param  \Illuminate\Contracts\Support\Arrayable<array-key, mixed>|array<mixed>  $ids
      * @param  array<int, (model-property<TModelClass>|'*')>|model-property<TModelClass>|'*'  $columns
-     * @phpstan-return \Illuminate\Database\Eloquent\Collection<TModelClass>
+     * @phpstan-return \Illuminate\Database\Eloquent\Collection<int, TModelClass>
      */
     public function findMany($ids, $columns = ['*']);
 
@@ -82,7 +82,7 @@ class Builder
      *
      * @param  mixed  $id
      * @param  array<int, (model-property<TModelClass>|'*')>|model-property<TModelClass>|'*'  $columns
-     * @phpstan-return TModelClass|\Illuminate\Database\Eloquent\Collection<TModelClass>
+     * @phpstan-return ($id is (\Illuminate\Contracts\Support\Arrayable<array-key, mixed>|array<mixed>) ? \Illuminate\Database\Eloquent\Collection<int, TModelClass> : TModelClass)
      *
      * @throws \Illuminate\Database\Eloquent\ModelNotFoundException
      */
@@ -172,27 +172,6 @@ class Builder
     public function firstOr($columns = ['*'], \Closure $callback = null);
 
     /**
-     * Add a basic where clause to the query.
-     *
-     * @param  \Closure|model-property<TModelClass>|array<model-property<TModelClass>|int, mixed>|\Illuminate\Database\Query\Expression  $column
-     * @param  mixed  $operator
-     * @param  mixed  $value
-     * @param  string  $boolean
-     * @return static
-     */
-    public function where($column, $operator = null, $value = null, $boolean = 'and');
-
-    /**
-     * Add an "or where" clause to the query.
-     *
-     * @param  \Closure|model-property<TModelClass>|array<model-property<TModelClass>|int, mixed>|\Illuminate\Database\Query\Expression  $column
-     * @param  mixed  $operator
-     * @param  mixed  $value
-     * @return static
-     */
-    public function orWhere($column, $operator = null, $value = null);
-
-    /**
      * Add a relationship count / exists condition to the query.
      *
      * @template TRelatedModel of Model
@@ -236,6 +215,27 @@ class Builder
     public function orDoesntHave($relation);
 
     /**
+     * Add a basic where clause to the query.
+     *
+     * @param  (\Closure(static): void)|(\Closure(static): static)|model-property<TModelClass>|array<model-property<TModelClass>|int, mixed>|\Illuminate\Database\Query\Expression  $column
+     * @param  mixed  $operator
+     * @param  mixed  $value
+     * @param  string  $boolean
+     * @return static
+     */
+    public function where($column, $operator = null, $value = null, $boolean = 'and');
+
+    /**
+     * Add an "or where" clause to the query.
+     *
+     * @param  (\Closure(static): void)|(\Closure(static): static)|model-property<TModelClass>|array<model-property<TModelClass>|int, mixed>|\Illuminate\Database\Query\Expression  $column
+     * @param  mixed  $operator
+     * @param  mixed  $value
+     * @return $this
+     */
+    public function orWhere($column, $operator = null, $value = null);
+
+    /**
      * Add a relationship count / exists condition to the query with where clauses.
      *
      * @param  string  $relation
@@ -256,6 +256,17 @@ class Builder
      * @return static
      */
     public function orWhereHas($relation, \Closure $callback = null, $operator = '>=', $count = 1);
+
+    /**
+     * Add an "or where" clause to a relationship query.
+     *
+     * @param  string  $relation
+     * @param  \Closure|string|array<int, string>|\Illuminate\Database\Query\Expression  $column
+     * @param  mixed  $operator
+     * @param  mixed  $value
+     * @return static
+     */
+    public function orWhereRelation($relation, $column, $operator = null, $value = null);
 
     /**
      * Add a polymorphic relationship count / exists condition to the query.
@@ -390,7 +401,7 @@ class Builder
     /**
      * Add a basic where clause to the query, and return the first result.
      *
-     * @param  \Closure|model-property<TModelClass>|array<model-property<TModelClass>|int, mixed>|\Illuminate\Database\Query\Expression  $column
+     * @param  (\Closure(static): void)|(\Closure(static): static)|model-property<TModelClass>|array<model-property<TModelClass>|int, mixed>|\Illuminate\Database\Query\Expression  $column
      * @param  mixed  $operator
      * @param  mixed  $value
      * @param  string  $boolean
@@ -402,7 +413,7 @@ class Builder
      * Execute the query as a "select" statement.
      *
      * @param  array<int, (model-property<TModelClass>|'*')>|model-property<TModelClass>|'*'  $columns
-     * @phpstan-return \Illuminate\Database\Eloquent\Collection<TModelClass>
+     * @phpstan-return \Illuminate\Database\Eloquent\Collection<int, TModelClass>
      */
     public function get($columns = ['*']);
 
@@ -423,24 +434,73 @@ class Builder
     public function value($column);
 
     /**
-     * Apply the callback's query changes if the given "value" is true.
+     * Paginate the given query.
      *
-     * @param mixed  $value
-     * @param callable($this, mixed): (void|Builder<TModelClass>) $callback
-     * @param callable($this, mixed): (null|Builder<TModelClass>)|null  $default
-     * @return mixed|$this
+     * @param  int|null  $perPage
+     * @param  array<array-key, mixed>  $columns
+     * @param  string  $pageName
+     * @param  int|null  $page
+     * @return \Illuminate\Pagination\LengthAwarePaginator
+     *
+     * @throws \InvalidArgumentException
      */
-    public function when($value, $callback, $default = null);
+    public function paginate($perPage = null, $columns = ['*'], $pageName = 'page', $page = null);
 
     /**
-     * Apply the callback's query changes if the given "value" is false.
+     * Paginate the given query into a simple paginator.
      *
-     * @param  mixed  $value
-     * @param  callable($this, mixed): (void|Builder<TModelClass>)  $callback
-     * @param  callable($this, mixed): (null|Builder<TModelClass>)|null  $default
-     * @return mixed|$this
+     * @param  int|null  $perPage
+     * @param  array<array-key, mixed>  $columns
+     * @param  string  $pageName
+     * @param  int|null  $page
+     * @return \Illuminate\Pagination\Paginator
      */
-    public function unless($value, $callback, $default = null);
+    public function simplePaginate($perPage = null, $columns = ['*'], $pageName = 'page', $page = null);
+
+    /**
+     * Paginate the given query into a cursor paginator.
+     *
+     * @param  int|null  $perPage
+     * @param  array<array-key, mixed>  $columns
+     * @param  string  $cursorName
+     * @param  \Illuminate\Pagination\Cursor|string|null  $cursor
+     * @return \Illuminate\Pagination\CursorPaginator
+     */
+     public function cursorPaginate($perPage = null, $columns = ['*'], $cursorName = 'cursor', $cursor = null);
+
+     /**
+      * Query lazily, by chunks of the given size.
+      *
+      * @param  int  $chunkSize
+      * @return \Illuminate\Support\LazyCollection<int, TModelClass>
+      *
+      * @throws \InvalidArgumentException
+      */
+     public function lazy($chunkSize = 1000);
+
+     /**
+      * Query lazily, by chunking the results of a query by comparing IDs.
+      *
+      * @param  int  $chunkSize
+      * @param  string|null  $column
+      * @param  string|null  $alias
+      * @return \Illuminate\Support\LazyCollection<int, TModelClass>
+      *
+      * @throws \InvalidArgumentException
+      */
+     public function lazyById($chunkSize = 1000, $column = null, $alias = null);
+
+     /**
+      * Query lazily, by chunking the results of a query by comparing IDs in descending order.
+      *
+      * @param  int  $chunkSize
+      * @param  string|null  $column
+      * @param  string|null  $alias
+      * @return \Illuminate\Support\LazyCollection<int, TModelClass>
+      *
+      * @throws \InvalidArgumentException
+      */
+     public function lazyByIdDesc($chunkSize = 1000, $column = null, $alias = null);
 }
 
 class Scope {}

@@ -38,13 +38,17 @@ class RelationParserHelper
     public function findRelatedModelInRelationMethod(
         MethodReflection $methodReflection
     ): ?string {
-        $fileName = $methodReflection
-            ->getDeclaringClass()
-            ->getNativeReflection()
-            ->getMethod($methodReflection->getName())
-            ->getFileName();
+        if (method_exists($methodReflection, 'getDeclaringTrait') && $methodReflection->getDeclaringTrait() !== null) {
+            $fileName = $methodReflection->getDeclaringTrait()->getFileName();
+        } else {
+            $fileName = $methodReflection
+                ->getDeclaringClass()
+                ->getNativeReflection()
+                ->getMethod($methodReflection->getName())
+                ->getFileName();
+        }
 
-        if ($fileName === false) {
+        if ($fileName === false || $fileName === null) {
             return null;
         }
 
